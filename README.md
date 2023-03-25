@@ -13,7 +13,15 @@ go get github.com/dillonstreator/go-replicate
 ```go
 package main
 
-import "github.com/dillonstreator/go-replicate"
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/dillonstreator/go-replicate"
+)
 
 // https://replicate.com/stability-ai/stable-diffusion/versions/a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef
 
