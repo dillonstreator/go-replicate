@@ -34,19 +34,19 @@ type StableDiffusionInput struct {
 type StableDiffusionOutput []string
 
 func main() {
-    ctx := context.Context()
+	ctx := context.Background()
 
-    stableDiffusion := replicate.NewClient[StableDiffusionInput, StableDiffusionOutput](os.Getenv("REPLICATE_API_KEY"), stableDiffusionModelVersion)
+	stableDiffusion := replicate.NewClient[StableDiffusionInput, StableDiffusionOutput](os.Getenv("REPLICATE_API_KEY"), stableDiffusionModelVersion)
 
-    prediction, err := stableDiffusion.CreatePrediction(ctx, StableDiffusionInput{
+	prediction, err := stableDiffusion.CreatePrediction(ctx, StableDiffusionInput{
 		Prompt: "neon sunset into skyline, cyberpunk, tron legacy, grid",
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-    for {
-        time.Sleep(time.Second * 2)
+	for {
+		time.Sleep(time.Second * 2)
 
 		prediction, err = stableDiffusion.GetPrediction(ctx, prediction.ID)
 		if err != nil {
