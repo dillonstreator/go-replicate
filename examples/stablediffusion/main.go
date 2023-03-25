@@ -12,13 +12,13 @@ import (
 
 // https://replicate.com/stability-ai/stable-diffusion/versions/a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef
 
+const stableDiffusionModelVersion = "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
+
 type StableDiffusionInput struct {
 	Prompt string `json:"prompt"`
 }
 
 type StableDiffusionOutput []string
-
-const stableDiffusionModelVersion = "a9758cbfbd5f3c2094457d996681af52552901775aa2d6dd0b17fd15df959bef"
 
 func main() {
 

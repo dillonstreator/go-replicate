@@ -14,6 +14,8 @@ import (
 
 // https://replicate.com/openai/whisper/versions/e39e354773466b955265e969568deb7da217804d8e771ea8c9cd0cef6591f8bc
 
+const whisperModelVersion = "e39e354773466b955265e969568deb7da217804d8e771ea8c9cd0cef6591f8bc"
+
 type WhisperInput struct {
 	// base64 encoded string of audio bytes
 	Audio string `json:"audio"`
@@ -36,8 +38,6 @@ type WhisperOutput struct {
 	Transcription    string  `json:"transcription"`
 	DetectedLanguage string  `json:"detected_language"`
 }
-
-const whisperModelVersion = "e39e354773466b955265e969568deb7da217804d8e771ea8c9cd0cef6591f8bc"
 
 //go:embed resources/golang.mp3
 var audioMP3Bytes []byte
