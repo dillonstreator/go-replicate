@@ -37,12 +37,12 @@ func (s Status) Valid() bool {
 	}, s)
 }
 
-type Prediction[InputT any] struct {
-	ID      string   `json:"id"`
-	Version string   `json:"version"`
-	Status  Status   `json:"status"`
-	Output  []string `json:"output"`
-	Input   InputT   `json:"input"`
+type Prediction[InputT any, OutputT any] struct {
+	ID      string  `json:"id"`
+	Version string  `json:"version"`
+	Status  Status  `json:"status"`
+	Output  OutputT `json:"output"`
+	Input   InputT  `json:"input"`
 }
 
 type APIError struct {
@@ -53,20 +53,20 @@ func (e APIError) Error() string {
 	return e.Detail
 }
 
-type Client[InputT any] interface {
-	CreatePrediction(ctx context.Context, input InputT) (*Prediction[InputT], error)
-	GetPrediction(ctx context.Context, id string) (*Prediction[InputT], error)
+type Client[InputT any, OutputT any] interface {
+	CreatePrediction(ctx context.Context, input InputT) (*Prediction[InputT, OutputT], error)
+	GetPrediction(ctx context.Context, id string) (*Prediction[InputT, OutputT], error)
 	ListPredictions(ctx context.Context) Iterator[*PredictionListItem]
 }
 
-type client[InputT any] struct {
+type client[InputT any, OutputT any] struct {
 	requestClient request.Client
 	version       string
 }
 
-var _ Client[any] = (*client[any])(nil)
+var _ Client[any, any] = (*client[any, any])(nil)
 
-func NewClient[InputT any](apiKey string, modelVersion string) *client[InputT] {
+func NewClient[InputT any, OutputT any](apiKey string, modelVersion string) *client[InputT, OutputT] {
 	requestClient := request.NewClient(
 		baseURL,
 		request.WithToken("Token "+apiKey),
@@ -91,7 +91,7 @@ func NewClient[InputT any](apiKey string, modelVersion string) *client[InputT] {
 		}),
 	)
 
-	return &client[InputT]{
+	return &client[InputT, OutputT]{
 		requestClient: requestClient,
 		version:       modelVersion,
 	}
@@ -103,7 +103,7 @@ type input[InputT any] struct {
 	WebhookComplete string `json:"webhook_complete"`
 }
 
-func (c *client[InputT]) createBody(in InputT) (io.Reader, error) {
+func (c *client[InputT, OutputT]) createBody(in InputT) (io.Reader, error) {
 	_in := input[InputT]{
 		Version: c.version,
 		Input:   in,
@@ -117,13 +117,13 @@ func (c *client[InputT]) createBody(in InputT) (io.Reader, error) {
 	return bytes.NewReader(body), nil
 }
 
-func (c *client[InputT]) CreatePrediction(ctx context.Context, in InputT) (*Prediction[InputT], error) {
+func (c *client[InputT, OutputT]) CreatePrediction(ctx context.Context, in InputT) (*Prediction[InputT, OutputT], error) {
 	body, err := c.createBody(in)
 	if err != nil {
 		return nil, err
 	}
 
-	p := &Prediction[InputT]{}
+	p := &Prediction[InputT, OutputT]{}
 
 	_, err = c.requestClient.Post(ctx, "/predictions", body, p)
 	if err != nil {
@@ -133,8 +133,8 @@ func (c *client[InputT]) CreatePrediction(ctx context.Context, in InputT) (*Pred
 	return p, nil
 }
 
-func (c *client[InputT]) GetPrediction(ctx context.Context, id string) (*Prediction[InputT], error) {
-	p := &Prediction[InputT]{}
+func (c *client[InputT, OutputT]) GetPrediction(ctx context.Context, id string) (*Prediction[InputT, OutputT], error) {
+	p := &Prediction[InputT, OutputT]{}
 
 	_, err := c.requestClient.Get(ctx, "/predictions/"+id, nil, p)
 	if err != nil {
@@ -160,14 +160,14 @@ type Iterator[T any] interface {
 	Next(ctx context.Context) (T, error)
 }
 
-type predictionListIterator[InputT any] struct {
-	client *client[InputT]
+type predictionListIterator[InputT any, OutputT any] struct {
+	client *client[InputT, OutputT]
 
 	currList *PredictionList
 	currIdx  int
 }
 
-func (p *predictionListIterator[InputT]) Next(ctx context.Context) (*PredictionListItem, error) {
+func (p *predictionListIterator[InputT, OutputT]) Next(ctx context.Context) (*PredictionListItem, error) {
 	hasNext := p.currList == nil || p.currList.Next != nil
 	currDone := p.currList == nil || p.currIdx > len(p.currList.Results)-1
 
@@ -201,6 +201,6 @@ func (p *predictionListIterator[InputT]) Next(ctx context.Context) (*PredictionL
 	return next, nil
 }
 
-func (c *client[InputT]) ListPredictions(ctx context.Context) Iterator[*PredictionListItem] {
-	return &predictionListIterator[InputT]{client: c}
+func (c *client[InputT, OutputT]) ListPredictions(ctx context.Context) Iterator[*PredictionListItem] {
+	return &predictionListIterator[InputT, OutputT]{client: c}
 }
