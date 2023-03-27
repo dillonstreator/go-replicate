@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/dillonstreator/request"
 	"golang.org/x/exp/slices"
@@ -38,11 +39,14 @@ func (s Status) Valid() bool {
 }
 
 type Prediction[InputT any, OutputT any] struct {
-	ID      string  `json:"id"`
-	Version string  `json:"version"`
-	Status  Status  `json:"status"`
-	Output  OutputT `json:"output"`
-	Input   InputT  `json:"input"`
+	ID          string    `json:"id"`
+	Version     string    `json:"version"`
+	Status      Status    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	StartedAt   time.Time `json:"started_at"`
+	CompletedAt time.Time `json:"completed_at"`
+	Output      OutputT   `json:"output"`
+	Input       InputT    `json:"input"`
 }
 
 type APIError struct {
@@ -161,9 +165,13 @@ type PredictionList struct {
 }
 
 type PredictionListItem struct {
-	ID      string `json:"id"`
-	Version string `json:"version"`
-	Status  Status `json:"status"`
+	ID          string    `json:"id"`
+	Version     string    `json:"version"`
+	CreatedAt   time.Time `json:"created_at"`
+	StartedAt   time.Time `json:"started_at"`
+	CompletedAt time.Time `json:"completed_at"`
+	Source      string    `json:"source"`
+	Status      Status    `json:"status"`
 }
 
 type Iterator[T any] interface {
@@ -183,6 +191,8 @@ func (p *predictionListIterator[InputT, OutputT]) Next(ctx context.Context) (*Pr
 
 	if currDone {
 		if !hasNext {
+			p.currList = nil
+			p.currIdx = 0
 			return nil, IteratorDone
 		}
 

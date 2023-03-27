@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -40,12 +41,30 @@ func main() {
 		}
 
 		fmt.Println(prediction.ID, prediction.Status)
-		if prediction.Status == replicate.StatusProcessing {
+		if prediction.Status == replicate.StatusProcessing || prediction.Status == replicate.StatusStarting {
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		fmt.Println(prediction.Output)
 		break
+	}
+
+	predictionIterator := replStableDiffusion.ListPredictions(ctx)
+	for {
+		predictionItem, err := predictionIterator.Next(ctx)
+		if err != nil {
+			if errors.Is(err, replicate.IteratorDone) {
+				break
+			}
+
+			log.Fatal(err)
+		}
+
+		if predictionItem.Version != stableDiffusionModelVersion {
+			continue
+		}
+
+		fmt.Println(predictionItem.ID, predictionItem.Status, predictionItem.Version, predictionItem.CompletedAt)
 	}
 }
