@@ -56,6 +56,7 @@ func (e APIError) Error() string {
 type Client[InputT any, OutputT any] interface {
 	CreatePrediction(ctx context.Context, input InputT) (*Prediction[InputT, OutputT], error)
 	GetPrediction(ctx context.Context, id string) (*Prediction[InputT, OutputT], error)
+	CancelPrediction(ctx context.Context, id string) error
 	ListPredictions(ctx context.Context) Iterator[*PredictionListItem]
 }
 
@@ -142,6 +143,15 @@ func (c *client[InputT, OutputT]) GetPrediction(ctx context.Context, id string) 
 	}
 
 	return p, nil
+}
+
+func (c *client[InputT, OutputT]) CancelPrediction(ctx context.Context, id string) error {
+	_, err := c.requestClient.Post(ctx, "/predictions/"+id+"/cancel", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type PredictionList struct {
