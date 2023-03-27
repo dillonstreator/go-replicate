@@ -186,39 +186,45 @@ type predictionListIterator[InputT any, OutputT any] struct {
 }
 
 func (p *predictionListIterator[InputT, OutputT]) Next(ctx context.Context) (*PredictionListItem, error) {
-	hasNext := p.currList == nil || p.currList.Next != nil
-	currDone := p.currList == nil || p.currIdx > len(p.currList.Results)-1
+	for {
+		hasNext := p.currList == nil || p.currList.Next != nil
+		currDone := p.currList == nil || p.currIdx > len(p.currList.Results)-1
 
-	if currDone {
-		if !hasNext {
-			p.currList = nil
-			p.currIdx = 0
-			return nil, IteratorDone
-		}
+		if currDone {
+			if !hasNext {
+				p.currList = nil
+				p.currIdx = 0
+				return nil, IteratorDone
+			}
 
-		var values url.Values
-		if p.currList != nil {
-			var err error
-			values, err = url.ParseQuery(*p.currList.Next)
+			var values url.Values
+			if p.currList != nil {
+				var err error
+				values, err = url.ParseQuery(*p.currList.Next)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			currList := &PredictionList{}
+			_, err := p.client.requestClient.Get(ctx, "/predictions", values, currList)
 			if err != nil {
 				return nil, err
 			}
+
+			p.currList = currList
+			p.currIdx = 0
 		}
 
-		currList := &PredictionList{}
-		_, err := p.client.requestClient.Get(ctx, "/predictions", values, currList)
-		if err != nil {
-			return nil, err
+		next := p.currList.Results[p.currIdx]
+		p.currIdx++
+
+		if next.Version != p.client.version {
+			continue
 		}
 
-		p.currList = currList
-		p.currIdx = 0
+		return next, nil
 	}
-
-	next := p.currList.Results[p.currIdx]
-	p.currIdx++
-
-	return next, nil
 }
 
 func (c *client[InputT, OutputT]) ListPredictions(ctx context.Context) Iterator[*PredictionListItem] {

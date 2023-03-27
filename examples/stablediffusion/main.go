@@ -61,10 +61,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if predictionItem.Version != stableDiffusionModelVersion {
-			continue
-		}
-
 		fmt.Println(predictionItem.ID, predictionItem.Status, predictionItem.Version, predictionItem.CompletedAt)
 	}
 }
